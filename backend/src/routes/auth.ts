@@ -42,7 +42,7 @@ router.post("/register", async (req: Request, res: Response) => {
         role: user.role,
       },
     });
-  } catch (error) {
+  } catch {
     return res.status(500).json({ message: "Server error" });
   }
 });
@@ -80,7 +80,7 @@ router.post("/login", async (req: Request, res: Response) => {
         role: user.role,
       },
     });
-  } catch (error) {
+  } catch {
     return res.status(500).json({ message: "Server error" });
   }
 });

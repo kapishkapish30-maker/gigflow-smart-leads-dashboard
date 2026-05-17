@@ -4,9 +4,23 @@ import { protect } from "../middleware/auth";
 
 const router = Router();
 
+const requireAdmin = (req: Request, res: Response, next: Function) => {
+  const user = (req as any).user;
+
+  if (!user) {
+    return res.status(401).json({ message: "Not authorized" });
+  }
+
+  if (user.role !== "admin") {
+    return res.status(403).json({ message: "Forbidden" });
+  }
+
+  next();
+};
+
 router.use(protect);
 
-router.post("/", authorizeRoles("admin"), async (req: Request, res: Response) => {
+router.post("/", requireAdmin, async (req: Request, res: Response) => {
   try {
     const { name, email, status, source } = req.body;
     const user = (req as any).user;
@@ -24,7 +38,7 @@ router.post("/", authorizeRoles("admin"), async (req: Request, res: Response) =>
     });
 
     return res.status(201).json(lead);
-  } catch (error) {
+  } catch {
     return res.status(500).json({ message: "Server error" });
   }
 });
@@ -51,7 +65,6 @@ router.get("/", async (req: Request, res: Response) => {
     }
 
     const sortOrder = sort === "oldest" ? 1 : -1;
-
     const total = await Lead.countDocuments(filter);
 
     const leads = await Lead.find(filter)
@@ -68,7 +81,7 @@ router.get("/", async (req: Request, res: Response) => {
         totalPages: Math.ceil(total / limit),
       },
     });
-  } catch (error) {
+  } catch {
     return res.status(500).json({ message: "Server error" });
   }
 });
@@ -80,12 +93,12 @@ router.get("/:id", async (req: Request, res: Response) => {
       return res.status(404).json({ message: "Lead not found" });
     }
     return res.json(lead);
-  } catch (error) {
+  } catch {
     return res.status(500).json({ message: "Server error" });
   }
 });
 
-router.put("/:id", authorizeRoles("admin"), async (req: Request, res: Response) => {
+router.put("/:id", requireAdmin, async (req: Request, res: Response) => {
   try {
     const lead = await Lead.findByIdAndUpdate(req.params.id, req.body, {
       new: true,
@@ -96,12 +109,12 @@ router.put("/:id", authorizeRoles("admin"), async (req: Request, res: Response) 
     }
 
     return res.json(lead);
-  } catch (error) {
+  } catch {
     return res.status(500).json({ message: "Server error" });
   }
 });
 
-router.delete("/:id", authorizeRoles("admin"), async (req: Request, res: Response) => {
+router.delete("/:id", requireAdmin, async (req: Request, res: Response) => {
   try {
     const lead = await Lead.findByIdAndDelete(req.params.id);
 
@@ -110,12 +123,12 @@ router.delete("/:id", authorizeRoles("admin"), async (req: Request, res: Respons
     }
 
     return res.json({ message: "Lead deleted successfully" });
-  } catch (error) {
+  } catch {
     return res.status(500).json({ message: "Server error" });
   }
 });
 
-router.get("/export/csv", authorizeRoles("admin"), async (req: Request, res: Response) => {
+router.get("/export/csv", requireAdmin, async (req: Request, res: Response) => {
   try {
     const leads = await Lead.find({});
 
@@ -133,7 +146,7 @@ router.get("/export/csv", authorizeRoles("admin"), async (req: Request, res: Res
     res.header("Content-Type", "text/csv");
     res.attachment("leads.csv");
     return res.send(csv);
-  } catch (error) {
+  } catch {
     return res.status(500).json({ message: "Server error" });
   }
 });
