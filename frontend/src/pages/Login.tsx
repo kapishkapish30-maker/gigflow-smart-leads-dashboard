@@ -1,0 +1,120 @@
+import { useState } from "react";
+import { useNavigate, Link } from "react-router-dom";
+import { api } from "../services/api";
+import { useAuth } from "../context/AuthContext";
+
+export default function Login() {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [message, setMessage] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const navigate = useNavigate();
+  const { login } = useAuth();
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    try {
+      setLoading(true);
+
+      const res = await api.post("/auth/login", {
+        email,
+        password,
+      });
+
+      login(res.data.token, res.data.user);
+
+      navigate("/");
+    } catch (err: any) {
+      setMessage(err?.response?.data?.message || "Login failed");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div
+      style={{
+        minHeight: "100vh",
+        background: "black",
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+      }}
+    >
+      <form
+        onSubmit={handleSubmit}
+        style={{
+          background: "white",
+          padding: "40px",
+          borderRadius: "16px",
+          width: "350px",
+          display: "flex",
+          flexDirection: "column",
+          gap: "16px",
+          boxShadow: "0 0 20px rgba(255,255,255,0.15)",
+        }}
+      >
+        <h1
+          style={{
+            textAlign: "center",
+            margin: 0,
+            fontSize: "32px",
+            color: "black",
+          }}
+        >
+          Login
+        </h1>
+
+        <input
+          type="email"
+          placeholder="Email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          style={{
+            padding: "12px",
+            borderRadius: "8px",
+            border: "1px solid #ccc",
+          }}
+        />
+
+        <input
+          type="password"
+          placeholder="Password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          style={{
+            padding: "12px",
+            borderRadius: "8px",
+            border: "1px solid #ccc",
+          }}
+        />
+
+        <button
+          type="submit"
+          disabled={loading}
+          style={{
+            padding: "12px",
+            background: "#6e6d6d",
+            color: "white",
+            border: "none",
+            borderRadius: "8px",
+            cursor: "pointer",
+            fontWeight: "bold",
+          }}
+        >
+          {loading ? "Logging in..." : "Login"}
+        </button>
+
+        <p style={{ textAlign: "center", margin: 0 }}>
+          No account? <Link to="/register">Register</Link>
+        </p>
+
+        {message && (
+          <p style={{ color: "red", textAlign: "center" }}>{message}</p>
+        )}
+      </form>
+    </div>
+  );
+}
